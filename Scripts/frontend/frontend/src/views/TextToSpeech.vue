@@ -43,12 +43,7 @@
         </div>
 
         <div class="center">
-          <button class="btn-save" @click="save">
-            <svg viewBox="0 0 24 24">
-              <path fill="#9747FF" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-            </svg>
-            <span>Save this audio</span>
-          </button>
+          
         </div>
       </div>
     </section>
@@ -73,17 +68,7 @@ export default {
     };
   },
   methods: {
-    onSignout() {
-      this.$message('Sign out clicked');
-    },
-    async onGenerate() {
-      this.loading = true;
-      try {
-        this.$message.success('Generated!');
-      } finally {
-        this.loading = false;
-      }
-    },
+
     toggle(i) {
       const el = this.$refs['audio' + i];
       const item = this.audios[i];
@@ -213,7 +198,7 @@ $border: rgba(255, 255, 255, .08);
 
 .audio-btn {
   height: 47px;
-  padding: 0 24px; /* add padding left and right */
+  padding: 0 24px; 
   border-radius: 12px;
   background: #6D6D6D;
   border: none;
