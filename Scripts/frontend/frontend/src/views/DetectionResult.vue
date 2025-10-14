@@ -1,6 +1,6 @@
 <template>
   <div class="page detect">
-    <side-panel/>
+    <side-panel />
 
     <div class="looper"></div>
 
@@ -14,34 +14,46 @@
 
         <div class="chart-row">
           <div class="donut">
-            <svg :width="size" :height="size" :viewBox="`0 0 ${size} ${size}`" role="img"
-                 aria-label="AI detection progress">
+            <svg
+              :width="size"
+              :height="size"
+              :viewBox="`0 0 ${size} ${size}`"
+              role="img"
+              aria-label="AI detection progress"
+            >
               <defs>
                 <linearGradient :id="gradId" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%"  stop-color="#A855F7"/>
-                  <stop offset="100%" stop-color="#3B82F6"/>
+                  <stop offset="0%" stop-color="#A855F7" />
+                  <stop offset="100%" stop-color="#3B82F6" />
                 </linearGradient>
               </defs>
 
               <circle
-                  :cx="center" :cy="center" :r="radius"
-                  :stroke="`url(#${gradId})`"
-                  :stroke-width="stroke"
-                  fill="none"
-                  stroke-linecap="butt"
-                  :stroke-dasharray="ringDash"
-                  :stroke-dashoffset="dashOffset"
-                  :transform="rotate"
+                :cx="center"
+                :cy="center"
+                :r="radius"
+                :stroke="`url(#${gradId})`"
+                :stroke-width="stroke"
+                fill="none"
+                stroke-linecap="butt"
+                :stroke-dasharray="ringDash"
+                :transform="rotate"
               />
-
-
             </svg>
 
             <div class="center-text">
-              <div class="line2">{{ score }}%</div>
+              <div v-if="detecting" class="line2 recording">●</div>
+              <div v-else class="line2">{{ score }}%</div>
             </div>
+
             <div class="button-wrap">
-              <button class="detect-btn" @click="toggleDetect">{{ buttonText }}</button>
+              <button
+                class="detect-btn"
+                :disabled="detecting"
+                @click="toggleDetect"
+              >
+                {{ buttonText }}
+              </button>
             </div>
           </div>
         </div>
@@ -51,14 +63,11 @@
 </template>
 
 <script>
-import SidePanel from '@/components/SidePanel.vue';
+import SidePanel from "@/components/SidePanel.vue";
 
 export default {
-  name: 'DetectionResult',
-  components: {SidePanel},
-  props: {
-    score: {type: Number, default: 0}
-  },
+  name: "DetectionResult",
+  components: { SidePanel },
   data() {
     const size = 466;
     const stroke = 48;
@@ -66,36 +75,30 @@ export default {
     const radius = (size - stroke) / 2;
     const circum = 2 * Math.PI * radius;
     return {
-      size, stroke, center, radius, circum,
-      gradId: 'grad-donut-' + Math.random().toString(36).slice(2, 8),
-      bgId: 'grad-bg-' + Math.random().toString(36).slice(2, 8),
+      size,
+      stroke,
+      center,
+      radius,
+      circum,
+      gradId: "grad-donut-" + Math.random().toString(36).slice(2, 8),
       rotate: `rotate(-90 ${center} ${center})`,
-      gapRatio: 0.06,
       detecting: false,
-      intervalId: null
+      score: 0,
+      mediaRecorder: null,
+      audioChunks: [],
     };
   },
   computed: {
-    dashProgress() {
-      const gap = this.circum * this.gapRatio;
+    ringDash() {
+      const gap = this.circum * 0.06;
       const effective = this.circum - gap;
       const show = Math.max(0, Math.min(1, this.score / 100)) * effective;
       const hide = this.circum - show;
       return `${show} ${hide}`;
     },
-    gapDash() {
-      const gap = this.circum * this.gapRatio;
-      return `${gap} ${this.circum}`;
-    },
     buttonText() {
-      return this.detecting ? 'Detecting...' : 'Detect';
+      return this.detecting ? "Recording..." : "Detect";
     },
-    ringDash() {
-      return this.dashProgress;
-    },
-    dashOffset() {
-      return 0;
-    }
   },
   methods: {
     async toggleDetect() {
@@ -103,34 +106,80 @@ export default {
       this.detecting = true;
       this.score = 0;
 
-      await fetch("http://127.0.0.1:5000/start", { method: "POST" });
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.audioChunks = [];
+        this.mediaRecorder = new MediaRecorder(stream);
 
-      let displayed = 0;
-      this.intervalId = setInterval(async () => {
-        const res = await fetch("http://127.0.0.1:5000/progress");
-        const data = await res.json();
-        const target = data.value;
+        this.mediaRecorder.ondataavailable = (e) => this.audioChunks.push(e.data);
+        this.mediaRecorder.start();
+        console.log("Recording started...");
 
-        // ease toward the real value
-        displayed += (target - displayed) * 0.2;
-        this.score = Math.min(100, Math.round(displayed));
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        this.mediaRecorder.stop();
+        console.log("Recording stopped.");
 
-        if (target >= 100 && Math.abs(displayed - target) < 0.5) {
-          clearInterval(this.intervalId);
-          this.detecting = false;
-          this.score = 100;
+        const audioBlob = await new Promise((resolve) => {
+          this.mediaRecorder.onstop = () => {
+            const blob = new Blob(this.audioChunks, { type: "audio/wav" });
+            resolve(blob);
+          };
+        });
+
+        const base64Audio = await this.blobToBase64(audioBlob);
+
+        console.log("Sending audio to Flask...");
+        const response = await fetch("http://127.0.0.1:5000/detect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ audio: base64Audio }),
+        });
+
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+        const data = await response.json();
+        const targetScore = data.score ?? 0;
+        console.log("Detection score:", targetScore);
+
+        this.animateScore(targetScore);
+      } catch (err) {
+        console.error("Detection error:", err);
+        this.score = 0;
+      } finally {
+        this.detecting = false;
+      }
+    },
+
+    blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    },
+
+    animateScore(target) {
+      const step = (target - this.score) / 30;
+      const interval = setInterval(() => {
+        this.score += step;
+        if (
+          (step > 0 && this.score >= target) ||
+          (step < 0 && this.score <= target)
+        ) {
+          this.score = Math.round(target);
+          clearInterval(interval);
         }
-      }, 30); // refresh ~33 fps
-    }
-  }
+      }, 30);
+    },
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-$bg: #0A0A0A;
-$panel: #000;
-$border: rgba(255, 255, 255, .08);
-$text: #E6E8EB;
+$bg: #0a0a0a;
+$border: rgba(255, 255, 255, 0.08);
+$text: #e6e8eb;
 
 .detect {
   min-height: 100vh;
@@ -153,7 +202,7 @@ $text: #E6E8EB;
   background: url(~@/assets/looper-bg.png) center / 1600px auto no-repeat;
   background-size: 100%;
   background-position: 0px -300px;
-  opacity: .5;
+  opacity: 0.5;
   transform: rotate(15deg);
   pointer-events: none;
 }
@@ -164,7 +213,8 @@ $text: #E6E8EB;
   background: #000;
   border: 1px solid $border;
   border-radius: 16px;
-  box-shadow: 0 4px 50px rgba(33, 33, 33, .08), 0 4px 6px rgba(33, 33, 33, .04);
+  box-shadow: 0 4px 50px rgba(33, 33, 33, 0.08),
+    0 4px 6px rgba(33, 33, 33, 0.04);
   padding: 24px 24px 32px;
   top: 160px;
 }
@@ -177,33 +227,32 @@ $text: #E6E8EB;
 
 .title {
   margin: 0 0 8px 0;
-  font: 800 36px/1.2 'Cabin', 'Segoe UI', Arial, sans-serif;
+  font: 800 36px/1.2 "Cabin", "Segoe UI", Arial, sans-serif;
   color: #fff;
 }
 
 .sub {
   margin: 0 0 14px;
-  font: 500 18px/1.6 'Cabin', sans-serif;
+  font: 500 18px/1.6 "Cabin", sans-serif;
   color: #fff;
-  opacity: .95;
+  opacity: 0.95;
 }
 
 .chart-row {
   display: flex;
-  justify-content: center; 
-  align-items: center;      
+  justify-content: center;
+  align-items: center;
   min-height: 457px;
 }
 
 .donut {
   position: relative;
-  align-items: center;
   width: 466px;
   height: 466px;
-  margin: 4px 0 4px 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
 }
 
 .center-text {
@@ -217,9 +266,26 @@ $text: #E6E8EB;
   pointer-events: none;
 
   .line2 {
-    font: 900 90px/1 'Roboto', system-ui;
+    font: 900 90px/1 "Roboto", system-ui;
     color: #fff;
     text-align: center;
+  }
+
+  .recording {
+    font-size: 120px;
+    color: #ff4d4d;
+    animation: pulse 1s infinite alternate;
+  }
+}
+
+@keyframes pulse {
+  from {
+    opacity: 0.2;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.1);
   }
 }
 
@@ -234,19 +300,25 @@ $text: #E6E8EB;
   padding: 12px 28px;
   border: none;
   border-radius: 10px;
-  background-color: #A855F7;
+  background-color: #a855f7;
   color: #fff;
-  font: 700 18px/1 'Roboto', sans-serif;
+  font: 700 18px/1 "Roboto", sans-serif;
   cursor: pointer;
-  transition: transform .2s, opacity .2s;
+  transition: transform 0.2s, opacity 0.2s;
 
   &:hover {
     opacity: 0.9;
     transform: scale(1.05);
   }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
-html, body {
+html,
+body {
   margin: 0;
 }
 </style>

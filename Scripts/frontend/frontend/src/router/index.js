@@ -13,11 +13,11 @@ const routes = [
         name: 'home',
         component: HomeView
     },
-    {
-        path: '/tts',
-        name: 'TextToSpeech',
-        component: TextToSpeech
-    },
+	{
+	  path: '/tts',
+	  name: 'TextToSpeech',
+	  component: () => import('@/views/TextToSpeech.vue')
+	},
     {
         path: '/result',
         name: 'DetectionResult',

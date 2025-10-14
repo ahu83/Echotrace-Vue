@@ -34,15 +34,11 @@ def watermark_audio(model, audio, sr, payload=None ):
 
     return watermarked_audio
 
-def decode_watermark(model, audio_clips):
+def decode_watermark(detector, watermarked_audio, sample_rate, message_threshold=0.5):
     """decodes the watermarks from a watermarked audio clip"""
-    decoded_payloads = []
+    result, message = detector.detect_watermark(watermarked_audio, sample_rate, message_threshold=0.5)
 
-    for audio_clip in audio_clips:
-        processed_clip, _ = wavmark.decode_watermark(model, audio_clip, show_progress=True)
-        decoded_payloads.append(processed_clip)
-
-    return decoded_payloads
+    return result, message
 
 def calculate_error(decoded_payloads, payload):
     """calculates the error between the decoded payload and the actual payload"""

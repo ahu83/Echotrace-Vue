@@ -7,29 +7,26 @@
       <div class="panel">
         <h2 class="title">Text-To-Speech</h2>
         <p class="desc">Enter your text in the box to generate</p>
-        <p class="desc2">Only support .txt and PDF</p>
 
-        <el-input
-            class="area"
-            type="textarea"
-            :rows="8"
-            v-model="text"
-            placeholder="Paste text here…">
-        </el-input>
+        <textarea
+          class="area"
+          rows="8"
+          v-model="text"
+          placeholder="Paste text here…">
+        </textarea>
 
         <div class="center">
           <button class="btn-generate" @click="onGenerate" :disabled="loading">
             <svg viewBox="0 0 24 24" aria-hidden="true" style="margin-left: 33%">
               <path fill="#fff" d="M8 5v14l11-7z"/>
             </svg>
-            <span>Generate</span>
+            <span>{{ loading ? "Generating..." : "Generate" }}</span>
           </button>
         </div>
 
-        <el-divider></el-divider>
         <hr>
 
-        <div class="audios">
+        <div class="audios" v-if="audiosVisible">
           <button class="audio-btn" v-for="(a, i) in audios" :key="i" @click="toggle(i)">
             <svg v-if="!a.playing" viewBox="0 0 24 24">
               <path fill="#fff" d="M8 5v14l11-7z"/>
@@ -41,38 +38,81 @@
             <audio :ref="'audio'+i" :src="a.src" @ended="a.playing=false"></audio>
           </button>
         </div>
-
-        <div class="center">
-          
-        </div>
       </div>
     </section>
   </div>
 </template>
 
 <script>
-import SidePanel from '@/components/SidePanel.vue';
+import axios from "axios";
+import SidePanel from "@/components/SidePanel.vue";
 
 export default {
-  name: 'TextToSpeech',
+  name: "TextToSpeech",
   components: { SidePanel },
   data() {
     return {
       loading: false,
-      text: '',
+      text: "",
+      audiosVisible: false,
       audios: [
-        { name: 'Unwatermarked', src: '/mock/audio1.mp3', playing: false },
-        { name: 'Watermarked', src: '/mock/audio2.mp3', playing: false }
-
+        { name: "Unwatermarked", src: "", playing: false },
+        { name: "Watermarked", src: "", playing: false }
       ]
     };
   },
   methods: {
+    onSignout() {
+      console.log("Signout placeholder");
+    },
+
+    async onGenerate() {
+      if (!this.text.trim()) {
+        alert("Please enter some text first!");
+        return;
+      }
+
+      this.loading = true;
+      console.log("Sending text to Flask:", this.text);
+
+      try {
+        const res = await axios.post(
+          "http://127.0.0.1:5000/generate",
+          { text: this.text },
+          { headers: { "Content-Type": "application/json" } }
+        );
+
+        console.log("Flask responded:", res.data);
+
+        const toBlob = (b64) =>
+          URL.createObjectURL(
+            new Blob([Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))], {
+              type: "audio/wav",
+            })
+          );
+
+        this.audios = [
+          { name: "Unwatermarked", src: toBlob(res.data.unwatermarked), playing: false },
+          { name: "Watermarked", src: toBlob(res.data.watermarked), playing: false },
+        ];
+
+        this.audiosVisible = true;
+      } catch (err) {
+        console.error("Error generating audio:", err);
+        alert("Error generating audio. Check console for details.");
+      } finally {
+        this.loading = false;
+      }
+    },
 
     toggle(i) {
-      const el = this.$refs['audio' + i];
+      const ref = this.$refs['audio' + i];
+
+      const el = Array.isArray(ref) ? ref[0] : ref;
       const item = this.audios[i];
+
       if (!el) return;
+
       if (item.playing) {
         el.pause();
         item.playing = false;
@@ -81,10 +121,7 @@ export default {
         item.playing = true;
       }
     },
-    save() {
-      this.$message.info('Hook save API');
-    }
-  }
+  },
 };
 </script>
 
@@ -103,10 +140,6 @@ $border: rgba(255, 255, 255, .08);
 .panel-wrap {
   padding-left: 72px;
   transition: none !important;
-}
-
-.side.expanded + .looper + .panel-wrap {
-  padding-left: 72px !important; /* stop it from shifting when sidebar expands */
 }
 
 .looper {
@@ -145,17 +178,15 @@ $border: rgba(255, 255, 255, .08);
   margin: 0 0 12px;
 }
 
-.desc2 {
-  color: $muted;
-  font: 400 14px/20px 'Inter', system-ui;
-  margin: 0 0 12px;
-}
-
-.area ::v-deep textarea {
+.area {
+  width: 100%;
   background: rgba(19, 19, 22, .8);
   border: 1px dashed #D1D1D6;
   color: #E6E8EB;
   border-radius: 8px;
+  padding: 10px;
+  font-size: 16px;
+  resize: none;
 }
 
 .center {
@@ -198,7 +229,7 @@ $border: rgba(255, 255, 255, .08);
 
 .audio-btn {
   height: 47px;
-  padding: 0 24px; 
+  padding: 0 24px;
   border-radius: 12px;
   background: #6D6D6D;
   border: none;
@@ -214,29 +245,5 @@ $border: rgba(255, 255, 255, .08);
     width: 20px;
     height: 20px;
   }
-}
-
-.btn-save {
-  height: 47px;
-  padding: 0 24px;
-  border-radius: 12px;
-  background: #fff;
-  border: none;
-  color: #9747FF;
-  font: 500 18px/22px 'Inter', system-ui;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-
-  svg {
-    width: 24px;
-    height: 24px;
-  }
-}
-
-::v-deep .el-divider {
-  background-color: #fff;
-  opacity: .9;
 }
 </style>
