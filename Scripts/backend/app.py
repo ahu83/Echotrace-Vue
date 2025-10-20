@@ -23,12 +23,12 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 progress = {"value": 0, "running": False}
 
 # Load AudioSeal model ONCE
-print("Loading AudioSeal model...")
+print("Loading AudioSeal model")
 model = AudioSeal.load_generator("audioseal_wm_16bits")
-print("AudioSeal model ready.")
+print("AudioSeal model ready")
 preload_models()
 detector = AudioSeal.load_detector(("audioseal_detector_16bits"))
-print("AudioSeal detector ready.")
+print("AudioSeal detector ready")
 
 
 
@@ -42,7 +42,7 @@ def generate_tts():
     if not text:
         return jsonify({"error": "Missing text"}), 400
 
-    print(f"🎤 Generating Bark audio for: {text}")
+    print(f"Generating Bark audio for: {text}")
 
     #Bark generation
     with torch.no_grad():
