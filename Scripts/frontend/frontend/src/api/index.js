@@ -1,10 +1,10 @@
-import request from '@/utils/http'
+import axios from "axios";
 
-export function test(params) {
-  return request({
-    url: '/aa/bb',
-    method: 'post',
-    params: params
-  })
-}
+const api = axios.create({
+  baseURL: "https://setting-milwaukee-politicians-core.trycloudflare.com",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
+export default api;
