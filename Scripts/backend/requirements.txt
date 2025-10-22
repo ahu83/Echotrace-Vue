@@ -1,5 +1,6 @@
-setuptools>=68.0.0
-wheel>=0.43.0
+setuptools>=75.0.0
+wheel>=0.44.0
+pip>=25.1.1
 Flask==3.0.3
 Flask-Cors==5.0.0
 Flask-SQLAlchemy==3.1.1
@@ -17,3 +18,4 @@ numpy==1.23.1
 scipy==1.10.1
 ffmpeg-python==0.2.0
 requests==2.22.0
+numpy==1.26.4
