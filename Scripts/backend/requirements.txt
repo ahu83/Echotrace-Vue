@@ -14,8 +14,7 @@ audioseal==0.1.8
 bark==0.1.5
 pydub==0.25.1
 soundfile==0.13.1
-numpy==1.23.1
+numpy==1.26.4
 scipy==1.10.1
 ffmpeg-python==0.2.0
 requests==2.22.0
-numpy==1.26.4
