@@ -1,14 +1,11 @@
-
 Flask==3.0.3
 Flask-Cors==5.0.0
 Flask-SQLAlchemy==3.1.1
 gunicorn==23.0.0
-itsdangerous==2.2.0
 Werkzeug==3.0.6
-Jinja2==3.1.4
 python-dotenv==1.0.1
 PyJWT==2.9.0
-torch==2.4.1
+torch==2.4.1+cu118
 torchaudio==2.4.1
 audioseal==0.1.8
 bark==0.1.5
