@@ -1,42 +1,60 @@
 <template>
   <div class="page tts">
-    <side-panel @signout="onSignout"/>
+    <side-panel />
+
     <div class="looper"></div>
 
-    <section class="panel-wrap fixed-panel">
-      <div class="panel">
-        <h2 class="title">Text-To-Speech</h2>
-        <p class="desc">Enter your text in the box to generate</p>
+    <section class="panel-wrap">
+      <div class="panel fixed-panel">
+        <header class="head">
+          <h2 class="title">Text to Speech</h2>
+        </header>
 
-        <textarea
-          class="area"
-          rows="8"
-          v-model="text"
-          placeholder="Paste text here…">
-        </textarea>
+        <p class="sub">Enter text to generate AI audio</p>
 
-        <div class="center">
-          <button class="btn-generate" @click="onGenerate" :disabled="loading">
-            <svg viewBox="0 0 24 24" aria-hidden="true" style="margin-left: 33%">
-              <path fill="#fff" d="M8 5v14l11-7z"/>
-            </svg>
-            <span>{{ loading ? "Generating..." : "Generate" }}</span>
+        <div class="input-container">
+          <textarea
+            v-model="text"
+            class="tts-input"
+            placeholder="Type your text here..."
+            rows="6"
+          ></textarea>
+        </div>
+
+        <div class="button-wrap">
+          <button
+            class="detect-btn"
+            :disabled="loading"
+            @click="onGenerate"
+          >
+            {{ loading ? "Generating..." : "Generate Audio" }}
           </button>
         </div>
 
-        <hr>
+        <div v-if="audiosVisible" class="audio-section">
+          <div
+            v-for="(audio, i) in audios"
+            :key="i"
+            class="audio-card"
+          >
+            <h3>{{ audio.name }}</h3>
+            <audio
+              :ref="'audio' + i"
+              :src="audio.src"
+              controls
+              preload="none"
+            ></audio>
 
-        <div class="audios" v-if="audiosVisible">
-          <button class="audio-btn" v-for="(a, i) in audios" :key="i" @click="toggle(i)">
-            <svg v-if="!a.playing" viewBox="0 0 24 24">
-              <path fill="#fff" d="M8 5v14l11-7z"/>
-            </svg>
-            <svg v-else viewBox="0 0 24 24">
-              <path fill="#fff" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-            </svg>
-            <span>{{ a.name }}</span>
-            <audio :ref="'audio'+i" :src="a.src" @ended="a.playing=false"></audio>
-          </button>
+            <div class="button-wrap">
+              <!-- ✅ Only Download button remains -->
+              <button
+                class="detect-btn"
+                @click="download(i)"
+              >
+                Download
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -62,10 +80,6 @@ export default {
     };
   },
   methods: {
-    onSignout() {
-      console.log("Signout placeholder");
-    },
-
     async onGenerate() {
       if (!this.text.trim()) {
         alert("Please enter some text first!");
@@ -73,16 +87,19 @@ export default {
       }
 
       this.loading = true;
-      console.log("Sending text to Flask:", this.text);
 
       try {
+        const token = localStorage.getItem("token");
         const res = await axios.post(
           "http://127.0.0.1:5000/generate",
           { text: this.text },
-          { headers: { "Content-Type": "application/json" } }
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
-
-        console.log("Flask responded:", res.data);
 
         const toBlob = (b64) =>
           URL.createObjectURL(
@@ -105,41 +122,39 @@ export default {
       }
     },
 
-    toggle(i) {
-      const ref = this.$refs['audio' + i];
-
-      const el = Array.isArray(ref) ? ref[0] : ref;
+    // ✅ Only download logic remains
+    download(i) {
       const item = this.audios[i];
-
-      if (!el) return;
-
-      if (item.playing) {
-        el.pause();
-        item.playing = false;
-      } else {
-        el.play();
-        item.playing = true;
-      }
+      if (!item?.src) return;
+      const a = document.createElement("a");
+      a.href = item.src;
+      a.download = `${item.name.replace(/\s+/g, "_")}.wav`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     },
   },
 };
 </script>
 
-<style lang="scss" scoped>
-$bg: #0A0A0A;
-$panel: #000;
-$muted: #A0A0AB;
-$border: rgba(255, 255, 255, .08);
+<style scoped lang="scss">
+$bg: #0a0a0a;
+$border: rgba(255, 255, 255, 0.08);
+$text: #e6e8eb;
 
 .tts {
   min-height: 100vh;
   background: $bg;
-  color: #E6E8EB;
+  color: $text;
 }
 
 .panel-wrap {
   padding-left: 72px;
-  transition: none !important;
+}
+
+.fixed-panel {
+  position: relative !important;
+  left: 0 !important;
 }
 
 .looper {
@@ -148,102 +163,119 @@ $border: rgba(255, 255, 255, .08);
   background: url(~@/assets/looper-bg.png) center / 1600px auto no-repeat;
   background-size: 100%;
   background-position: 0px -300px;
-  opacity: .5;
+  opacity: 0.5;
   transform: rotate(15deg);
   pointer-events: none;
 }
 
 .panel {
-  max-width: 771px;
+  max-width: 1077px;
   margin: 0 auto 80px;
-  background: $panel;
-  box-shadow: 0 4px 50px rgba(33, 33, 33, .08), 0 4px 6px rgba(33, 33, 33, .04);
-  border-radius: 16px;
+  background: #000;
   border: 1px solid $border;
-  padding: 24px;
-  position: relative;
-  top: 200px;
+  border-radius: 16px;
+  box-shadow: 0 4px 50px rgba(33, 33, 33, 0.08),
+    0 4px 6px rgba(33, 33, 33, 0.04);
+  padding: 40px 48px 48px;
+  top: 160px;
+  box-sizing: border-box;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .title {
-  font-family: 'Cabin', sans-serif;
-  font-weight: 700;
-  font-size: 32px;
+  margin: 0 0 8px 0;
+  font: 800 36px/1.2 "Cabin", "Segoe UI", Arial, sans-serif;
   color: #fff;
-  margin: 0 0 8px;
 }
 
-.desc {
-  font: 400 14px/20px 'Inter', system-ui;
-  margin: 0 0 12px;
+.sub {
+  margin: 0 0 18px;
+  font: 500 18px/1.6 "Cabin", sans-serif;
+  color: #fff;
+  opacity: 0.95;
 }
 
-.area {
+.input-container {
+  display: flex;
+  justify-content: center;
   width: 100%;
-  background: rgba(19, 19, 22, .8);
-  border: 1px dashed #D1D1D6;
-  color: #E6E8EB;
-  border-radius: 8px;
-  padding: 10px;
-  font-size: 16px;
-  resize: none;
 }
 
-.center {
-  text-align: center;
-  margin: 18px 0 8px;
-}
-
-.btn-generate {
-  height: 47px;
-  width: 440px;
-  padding: 0 24px;
-  border-radius: 12px;
-  background: #9747FF;
-  border: none;
+.tts-input {
+  width: 100%;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 14px;
   color: #fff;
-  font: 500 19px/23px 'Inter', system-ui;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
+  font-size: 1em;
+  resize: none;
+  outline: none;
+  margin: 0 auto 20px;
+  transition: 0.2s;
+  box-sizing: border-box;
+}
 
-  svg {
-    width: 24px;
-    height: 24px;
+.tts-input:focus {
+  border-color: #a855f7;
+}
+
+.button-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.detect-btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 10px;
+  background-color: #a855f7;
+  color: #fff;
+  font: 700 18px/1 "Roboto", sans-serif;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+  margin: 6px;
+
+  &:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
   }
 
   &:disabled {
-    opacity: .6;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 }
 
-.audios {
+.audio-section {
   display: flex;
-  justify-content: center;
-  gap: 18px;
-  margin: 12px 0 12px;
-  padding: 5px;
+  justify-content: space-evenly;
+  margin-top: 40px;
 }
 
-.audio-btn {
-  height: 47px;
-  padding: 0 24px;
-  border-radius: 12px;
-  background: #6D6D6D;
-  border: none;
-  color: #fff;
-  font: 500 19px/23px 'Inter', system-ui;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
+.audio-card {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 20px;
+  width: 45%;
+  text-align: center;
 
-  svg {
-    width: 20px;
-    height: 20px;
+  h3 {
+    color: #fff;
+    margin-bottom: 10px;
+  }
+
+  audio {
+    width: 100%;
+    margin-bottom: 10px;
   }
 }
 </style>

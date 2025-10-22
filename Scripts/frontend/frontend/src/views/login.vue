@@ -4,158 +4,226 @@
 
     <section class="form-wrap">
       <div class="form-card">
-        <h1 class="title">Login to your account</h1>
+        <h2 class="title">Login to your account</h2>
 
-        <el-form ref="f" :model="form" class="el-reset" @submit.native.prevent>
-          <div class="field">
-            <label class="label">Email</label>
-            <div class="input-like">
-              <el-input v-model="form.email" placeholder="balamia@gmail.com" clearable />
-            </div>
+        <form @submit.prevent="submit">
+          <label>Email</label>
+          <input v-model="form.email" type="email" placeholder="Enter your email" required />
+
+          <label>Password</label>
+          <div class="password-field">
+            <input
+              v-model="form.password"
+              :type="showPwd ? 'text' : 'password'"
+              placeholder="Enter your password"
+              required
+            />
+            <i
+              :class="['el-icon-view', 'eye', { on: showPwd }]"
+              @click.stop="showPwd = !showPwd"
+              title="Show / Hide"
+            />
           </div>
 
-          <div class="field">
-            <div class="label-row">
-              <label class="label">Password</label>
-              <router-link class="forgot" to="/forgot">Forgot ?</router-link>
-            </div>
-            <div class="input-like">
-              <el-input
-                  :type="showPwd ? 'text' : 'password'"
-                  v-model="form.password"
-                  placeholder="Enter your password"
-                  @keyup.enter.native="submit"
-              >
-                <i
-                    slot="suffix"
-                    :class="['el-icon-view','eye', { on: showPwd }]"
-                    @click.stop="showPwd = !showPwd"
-                    title="Show / Hide"
-                    style="position: relative;top: 25%;"
-                />
-              </el-input>
-            </div>
-          </div>
+          <button type="submit" class="primary-btn" :disabled="loading">
+            {{ loading ? 'Logging in...' : 'Login now' }}
+          </button>
 
-          <el-button class="primary" type="primary" @click="submit" :loading="loading">
-            Login now
-          </el-button>
+          <p v-if="error" class="error">{{ error }}</p>
 
           <div class="bottom-row">
-            <span>Don't Have An Account?</span>
+            <span>Don't have an account?</span>
             <router-link class="link" to="/signup">Sign Up</router-link>
           </div>
-        </el-form>
+        </form>
       </div>
     </section>
   </div>
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
-  name: 'Login',
+  name: "LoginPage",
   data() {
     return {
-      loading: false,
+      form: {
+        email: "",
+        password: "",
+      },
       showPwd: false,
-      form: { email: '', password: '' }
+      loading: false,
+      error: "",
     };
   },
   methods: {
     async submit() {
-      if (!this.form.email || !this.form.password) {
-        this.$message && this.$message.warning
-            ? this.$message.warning('Please fill email & password')
-            : console.warn('Please fill email & password');
-        return;
-      }
+      this.error = "";
       this.loading = true;
       try {
-        // await http.post('/auth/login', this.form)
-        this.$message && this.$message.success
-            ? this.$message.success('Logged in!')
-            : console.log('Logged in!');
-        this.$router.push('/home');
+        const res = await axios.post(`${process.env.VUE_APP_API_URL}/login`, {
+          email: this.form.email.trim(),
+          password: this.form.password.trim(),
+        });
+
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("username", res.data.username);
+        this.$router.push("/home");
+      } catch (err) {
+        this.error = err.response?.data?.message || "Invalid credentials";
       } finally {
         this.loading = false;
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
-<style lang="scss" scoped>
-$bg: #0A0A0A;
-$text: #E6E8EB;
-
-.login {
-  min-height: 100vh;
-  background: $bg;
-  color: $text;
+<style scoped>
+/* General Layout */
+.page.login {
   position: relative;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  color: #fff;
   overflow: hidden;
 }
 
 .looper {
-  position: fixed;
-  inset: 0;
-  left: -361px; top: -659px;
-  width: 2259.73px; height: 1396.15px;
-  background: url(~@/assets/looper-bg.png) center / cover no-repeat;
-  opacity: .5;
-  transform: rotate(15deg);
-  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url("@/assets/looper-bg.png") center center / cover no-repeat;
+  opacity: 0.4;
+  z-index: 0;
 }
 
-.form-wrap { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+.form-wrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 100vh;
+}
+
 .form-card {
-  width: 426px;
-  background: #000;
-  border-radius: 20px;
-  box-shadow: 40px 40px 60px #1E1F21;
-  padding: 48px 72px;
+  background: #0b0b0b;
+  padding: 40px;
+  border-radius: 12px;
+  width: 380px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
 }
 
 .title {
-  margin: 0 0 24px;
-  font: 600 28px/1 'Poppins', system-ui;
-  color: #FAFAFA;
+  margin-bottom: 25px;
+  font-size: 1.6em;
+  font-weight: 600;
+  color: #fafafa;
 }
 
-.el-reset { display: flex; flex-direction: column; gap: 24px; }
-.field { display: flex; flex-direction: column; gap: 12px; }
-.label { font: 400 16px/1 'Poppins', system-ui; color: #D1D1D6; }
-.label-row { display: flex; align-items: center; justify-content: space-between; }
-.forgot { color: #A0A0AB; font: 400 16px/1 'Poppins', system-ui; }
-
-.input-like {
-  border: 3px solid #EBEDF0;
-  border-radius: 8px;
-  overflow: hidden;
-  ::v-deep .el-input__inner {
-    height: 42px; line-height: 42px;
-    background: transparent; border: none; color: #F2F2F7;
-    padding: 0 36px 0 16px;
-  }
-  ::v-deep .el-input__suffix { right: 10px; }
-  .eye { color: #70707B; cursor: pointer; }
-  .eye.on { color: #F2F2F7; }
+/* Input Styling (same as SignUp.vue) */
+form {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
 }
 
-.primary {
-  height: 52px; width: 100%;
-  border-radius: 8px;
-  background: #1570EF; border: none;
-  font: 600 16px/1 'Poppins', system-ui; color: #FCFCFC;
+label {
+  display: block;
+  font-size: 0.9em;
+  margin: 10px 0 5px;
+  color: #d1d1d6;
+}
+
+input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background: #111;
+  color: #fff;
+  font-size: 0.95em;
+  outline: none;
+  margin-bottom: 12px;
+  transition: 0.2s ease;
+}
+
+input:focus {
+  border-color: #3b82f6;
+}
+
+/* Password field with eye toggle */
+.password-field {
+  position: relative;
+}
+
+.eye {
+  position: absolute;
+  right: 12px;
+  top: 32%;
+  color: #70707b;
+  cursor: pointer;
+}
+
+.eye.on {
+  color: #f2f2f7;
+}
+
+/* Button */
+.primary-btn {
+  width: 100%;
+  padding: 12px;
+  background: #0066ff;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 600;
+  margin-top: 8px;
+  transition: 0.3s;
+}
+
+.primary-btn:hover {
+  background: #0051cc;
+}
+
+.primary-btn:disabled {
+  background: #333;
+  cursor: not-allowed;
+}
+
+/* Error and Bottom Row */
+.error {
+  color: #ef4444;
+  text-align: center;
+  margin-top: 10px;
+  font-size: 0.9em;
 }
 
 .bottom-row {
-  display: flex; justify-content: center; gap: 8px; margin-top: 4px;
-  span { color: #70707B; font: 400 16px/1 'Poppins', system-ui; }
-  .link { color: #A0A0AB; font: 400 16px/1 'Poppins', system-ui; }
+  text-align: center;
+  margin-top: 15px;
+  font-size: 0.9em;
+  color: #888;
 }
 
-@media (max-width: 720px) {
-  .form-card { width: 100%; padding: 32px 20px; }
+.bottom-row .link {
+  color: #60a5fa;
+  text-decoration: none;
+  margin-left: 5px;
+}
+
+.bottom-row .link:hover {
+  text-decoration: underline;
 }
 </style>

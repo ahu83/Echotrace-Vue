@@ -1,64 +1,37 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import HomeView from '@/views/home.vue'
+import { isTokenValid } from '@/utils/auth'
+
+import Home from '@/views/home.vue'
+import Login from '@/views/login.vue'
+import SignUp from '@/views/SignUp.vue'
+import Forgot from '@/views/Forgot.vue'
+import ForgotSent from '@/views/ForgotSent.vue'
+import TextToSpeech from '@/views/TextToSpeech.vue'
+import DetectionResult from '@/views/DetectionResult.vue'
+import Index from '@/views/index.vue'
 
 Vue.use(VueRouter)
 
-const TextToSpeech = () => import('@/views/TextToSpeech.vue');
-const DetectionResult = () => import('@/views/DetectionResult.vue');
-const SignUp = () => import('@/views/SignUp.vue');
-const index = () => import('@/views/index.vue');
-const login  = () => import('@/views/login.vue');
-const Forgot = () => import('@/views/Forgot.vue');
-const ForgotSent = () => import('@/views/ForgotSent.vue');
-
 const routes = [
-    {
-        path: '/',
-        name: 'index',
-        component: index
-    },
-    {
-        path: '/login',
-        name: 'login',
-        component: login
-    },
-    {
-        path: '/forgot',
-        name: 'forgot',
-        component: Forgot
-    },
-    {
-        path: '/forgotSent',
-        name: 'forgotSent',
-        component: ForgotSent
-    },
-    {
-        path: '/home',
-        name: 'home',
-        component: HomeView
-    },
-    {
-        path: '/tts',
-        name: 'TextToSpeech',
-        component: TextToSpeech
-    },
-    {
-        path: '/result',
-        name: 'DetectionResult',
-        component: DetectionResult
-    },
-    {
-        path: '/signup',
-        name: 'SignUp',
-        component: SignUp
-    },
+  { path: '/', component: Index },
+  { path: '/login', component: Login },
+  { path: '/signup', component: SignUp },
+  { path: '/forgot', component: Forgot },
+  { path: '/forgotSent', component: ForgotSent },
+  { path: '/tts', component: TextToSpeech, meta: { requiresAuth: true } },
+  { path: '/result', component: DetectionResult, meta: { requiresAuth: true } },
+  { path: '/home', component: Home, meta: { requiresAuth: true } }
 ]
 
-const router = new VueRouter({
-    mode: 'history',
-    base: process.env.BASE_URL,
-    routes
+const router = new VueRouter({ mode: 'history', routes })
+
+router.beforeEach(async (to, from, next) => {
+  if (to.matched.some(r => r.meta.requiresAuth)) {
+    const valid = await isTokenValid()
+    if (!valid) next('/login')
+    else next()
+  } else next()
 })
 
 export default router

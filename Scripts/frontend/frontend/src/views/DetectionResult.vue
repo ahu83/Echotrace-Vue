@@ -14,6 +14,7 @@
 
         <div class="chart-row">
           <div class="donut">
+            <!-- Donut always exists but stroke hidden until detection -->
             <svg
               :width="size"
               :height="size"
@@ -32,24 +33,45 @@
                 :cx="center"
                 :cy="center"
                 :r="radius"
-                :stroke="`url(#${gradId})`"
+                :stroke="(hasDetected || detecting) ? `url(#${gradId})` : 'transparent'"
                 :stroke-width="stroke"
                 fill="none"
-                stroke-linecap="butt"
+                stroke-linecap="round"
                 :stroke-dasharray="ringDash"
                 :transform="rotate"
               />
             </svg>
 
+            <!-- Percentage text -->
             <div class="center-text">
-              <div v-if="detecting" class="line2 recording">●</div>
-              <div v-else class="line2">{{ score }}%</div>
+              <div class="line2">{{ Math.round(score) }}%</div>
+            </div>
+
+            <div class="upload-wrap">
+              <input
+                id="audioUpload"
+                type="file"
+                accept="audio/*"
+                @change="handleFileUpload"
+                class="file-input"
+              />
+              <label
+                for="audioUpload"
+                class="upload-label"
+                :class="{ done: uploaded }"
+              >
+                {{ uploaded ? "Uploaded" : "Choose Audio File" }}
+              </label>
+
+              <p v-if="fileName" class="file-status">
+                Selected: {{ fileName }}
+              </p>
             </div>
 
             <div class="button-wrap">
               <button
                 class="detect-btn"
-                :disabled="detecting"
+                :disabled="detecting || !file"
                 @click="toggleDetect"
               >
                 {{ buttonText }}
@@ -74,6 +96,7 @@ export default {
     const center = size / 2;
     const radius = (size - stroke) / 2;
     const circum = 2 * Math.PI * radius;
+
     return {
       size,
       stroke,
@@ -83,9 +106,11 @@ export default {
       gradId: "grad-donut-" + Math.random().toString(36).slice(2, 8),
       rotate: `rotate(-90 ${center} ${center})`,
       detecting: false,
+      hasDetected: false,
       score: 0,
-      mediaRecorder: null,
-      audioChunks: [],
+      file: null,
+      fileName: "",
+      uploaded: false,
     };
   },
   computed: {
@@ -97,80 +122,101 @@ export default {
       return `${show} ${hide}`;
     },
     buttonText() {
-      return this.detecting ? "Recording..." : "Detect";
+      if (!this.file) return "Detect";
+      return this.detecting ? "Detecting..." : "Detect";
     },
   },
   methods: {
+    handleFileUpload(e) {
+      const selected = e.target.files && e.target.files[0];
+      if (!selected) return;
+      this.file = selected;
+      this.fileName = selected.name;
+      this.uploaded = true;
+      this.hasDetected = false;
+      this.score = 0;
+    },
+
     async toggleDetect() {
       if (this.detecting) return;
+      if (!this.file) {
+        alert("Please select an audio file before detection.");
+        return;
+      }
+
       this.detecting = true;
-      this.score = 0;
+      this.hasDetected = true;
+      await this.animateScoreTo(0, 200);
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        this.audioChunks = [];
-        this.mediaRecorder = new MediaRecorder(stream);
+        const base64Audio = await this.fileToBase64(this.file);
+        const token = localStorage.getItem("token");
 
-        this.mediaRecorder.ondataavailable = (e) => this.audioChunks.push(e.data);
-        this.mediaRecorder.start();
-        console.log("Recording started...");
-
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        this.mediaRecorder.stop();
-        console.log("Recording stopped.");
-
-        const audioBlob = await new Promise((resolve) => {
-          this.mediaRecorder.onstop = () => {
-            const blob = new Blob(this.audioChunks, { type: "audio/wav" });
-            resolve(blob);
-          };
-        });
-
-        const base64Audio = await this.blobToBase64(audioBlob);
-
-        console.log("Sending audio to Flask...");
         const response = await fetch("http://127.0.0.1:5000/detect", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ audio: base64Audio }),
         });
 
         if (!response.ok) throw new Error(`Server error: ${response.status}`);
-
         const data = await response.json();
-        const targetScore = data.score ?? 0;
-        console.log("Detection score:", targetScore);
 
-        this.animateScore(targetScore);
+        const targetScore = Number(data.score ?? 0);
+        await this.animateScoreTo(targetScore, 900);
       } catch (err) {
         console.error("Detection error:", err);
-        this.score = 0;
+        alert("Error detecting watermark. Check console for details.");
+        await this.animateScoreTo(0, 200);
       } finally {
         this.detecting = false;
       }
     },
 
-    blobToBase64(blob) {
+    fileToBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(",")[1]);
+        reader.onload = () => {
+          const result = reader.result;
+          if (typeof result === "string" && result.includes(",")) {
+            resolve(result.split(",")[1]);
+          } else {
+            reject(new Error("Invalid file data"));
+          }
+        };
         reader.onerror = reject;
-        reader.readAsDataURL(blob);
+        reader.readAsDataURL(file);
       });
     },
 
-    animateScore(target) {
-      const step = (target - this.score) / 30;
-      const interval = setInterval(() => {
-        this.score += step;
-        if (
-          (step > 0 && this.score >= target) ||
-          (step < 0 && this.score <= target)
-        ) {
+    animateScoreTo(target, duration = 800) {
+      return new Promise((resolve) => {
+        target = Math.max(0, Math.min(100, target));
+        const start = this.score;
+        const delta = target - start;
+        if (duration <= 0 || Math.abs(delta) < 0.1) {
           this.score = Math.round(target);
-          clearInterval(interval);
+          return resolve();
         }
-      }, 30);
+
+        const startTime = performance.now();
+        const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+        const tick = (now) => {
+          const t = Math.min(1, (now - startTime) / duration);
+          const eased = easeOutCubic(t);
+          this.score = start + delta * eased;
+          if (t < 1) requestAnimationFrame(tick);
+          else {
+            this.score = Math.round(target);
+            resolve();
+          }
+        };
+
+        requestAnimationFrame(tick);
+      });
     },
   },
 };
@@ -255,38 +301,52 @@ $text: #e6e8eb;
   align-items: center;
 }
 
+/* 🔹 Percentage text moved slightly higher */
 .center-text {
   position: absolute;
-  top: 50%;
+  top: 38%; /* moved higher */
   left: 50%;
-  transform: translate(-50%, -75%);
+  transform: translate(-50%, -50%);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   pointer-events: none;
 
   .line2 {
-    font: 900 90px/1 "Roboto", system-ui;
+    font: 900 80px/1 "Roboto", system-ui;
     color: #fff;
     text-align: center;
   }
-
-  .recording {
-    font-size: 120px;
-    color: #ff4d4d;
-    animation: pulse 1s infinite alternate;
-  }
 }
 
-@keyframes pulse {
-  from {
-    opacity: 0.2;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1.1);
-  }
+.upload-wrap {
+  text-align: center;
+  margin-top: 20px;
+}
+.file-input {
+  display: none;
+}
+.upload-label {
+  display: inline-block;
+  background: #1f1f1f;
+  border: 1px solid #3a3a3a;
+  color: #ddd;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.upload-label:hover {
+  background: #3b3b3b;
+}
+.upload-label.done {
+  border-color: #00ff99;
+  color: #00ff99;
+}
+.file-status {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #a0a0ab;
 }
 
 .button-wrap {
@@ -315,10 +375,5 @@ $text: #e6e8eb;
     opacity: 0.5;
     cursor: not-allowed;
   }
-}
-
-html,
-body {
-  margin: 0;
 }
 </style>
