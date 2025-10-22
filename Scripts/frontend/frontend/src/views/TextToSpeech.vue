@@ -46,7 +46,6 @@
             ></audio>
 
             <div class="button-wrap">
-              <!-- ✅ Only Download button remains -->
               <button
                 class="detect-btn"
                 @click="download(i)"
@@ -62,7 +61,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api";
 import SidePanel from "@/components/SidePanel.vue";
 
 export default {
@@ -90,8 +89,8 @@ export default {
 
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.post(
-          "http://127.0.0.1:5000/generate",
+        const res = await api.post(
+          "/generate",
           { text: this.text },
           {
             headers: {
@@ -122,7 +121,6 @@ export default {
       }
     },
 
-    // ✅ Only download logic remains
     download(i) {
       const item = this.audios[i];
       if (!item?.src) return;

@@ -7,9 +7,6 @@
     <div class="signup-card">
       <h2>Create an account</h2>
 
-
-
-
       <form @submit.prevent="registerUser">
         <label>Email</label>
         <input v-model="email" type="email" required />
@@ -32,7 +29,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api";
 
 export default {
   name: "SignUp",
@@ -61,7 +58,7 @@ export default {
       }
 
       try {
-        const res = await axios.post(`${process.env.VUE_APP_API_URL}/register`, {
+        const res = await api.post("/register", {
           username: this.email.split("@")[0],
           email: this.email.trim(),
           password: this.password.trim(),

@@ -42,7 +42,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/api";
 
 export default {
   name: "LoginPage",
@@ -62,7 +62,7 @@ export default {
       this.error = "";
       this.loading = true;
       try {
-        const res = await axios.post(`${process.env.VUE_APP_API_URL}/login`, {
+        const res = await api.post("/login", {
           email: this.form.email.trim(),
           password: this.form.password.trim(),
         });
@@ -81,7 +81,6 @@ export default {
 </script>
 
 <style scoped>
-/* General Layout */
 .page.login {
   position: relative;
   height: 100vh;
@@ -130,7 +129,6 @@ export default {
   color: #fafafa;
 }
 
-/* Input Styling (same as SignUp.vue) */
 form {
   display: flex;
   flex-direction: column;
@@ -161,7 +159,6 @@ input:focus {
   border-color: #3b82f6;
 }
 
-/* Password field with eye toggle */
 .password-field {
   position: relative;
 }
@@ -178,7 +175,6 @@ input:focus {
   color: #f2f2f7;
 }
 
-/* Button */
 .primary-btn {
   width: 100%;
   padding: 12px;
@@ -202,7 +198,6 @@ input:focus {
   cursor: not-allowed;
 }
 
-/* Error and Bottom Row */
 .error {
   color: #ef4444;
   text-align: center;

@@ -14,7 +14,6 @@
 
         <div class="chart-row">
           <div class="donut">
-            <!-- Donut always exists but stroke hidden until detection -->
             <svg
               :width="size"
               :height="size"
@@ -42,7 +41,6 @@
               />
             </svg>
 
-            <!-- Percentage text -->
             <div class="center-text">
               <div class="line2">{{ Math.round(score) }}%</div>
             </div>
@@ -86,6 +84,7 @@
 
 <script>
 import SidePanel from "@/components/SidePanel.vue";
+import api from "@/api";
 
 export default {
   name: "DetectionResult",
@@ -152,19 +151,19 @@ export default {
         const base64Audio = await this.fileToBase64(this.file);
         const token = localStorage.getItem("token");
 
-        const response = await fetch("http://127.0.0.1:5000/detect", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ audio: base64Audio }),
-        });
+        // ✅ use shared api.js instance (auto baseURL)
+        const res = await api.post(
+          "/detect",
+          { audio: base64Audio },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-        if (!response.ok) throw new Error(`Server error: ${response.status}`);
-        const data = await response.json();
-
-        const targetScore = Number(data.score ?? 0);
+        const targetScore = Number(res.data.score ?? 0);
         await this.animateScoreTo(targetScore, 900);
       } catch (err) {
         console.error("Detection error:", err);
@@ -223,6 +222,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+/* unchanged styles */
 $bg: #0a0a0a;
 $border: rgba(255, 255, 255, 0.08);
 $text: #e6e8eb;
@@ -301,10 +301,9 @@ $text: #e6e8eb;
   align-items: center;
 }
 
-/* 🔹 Percentage text moved slightly higher */
 .center-text {
   position: absolute;
-  top: 38%; /* moved higher */
+  top: 38%;
   left: 50%;
   transform: translate(-50%, -50%);
   display: flex;
