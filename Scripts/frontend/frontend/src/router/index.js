@@ -9,6 +9,7 @@ import Forgot from '@/views/Forgot.vue'
 import ForgotSent from '@/views/ForgotSent.vue'
 import TextToSpeech from '@/views/TextToSpeech.vue'
 import DetectionResult from '@/views/DetectionResult.vue'
+import AiHistory from '@/views/AiHistory.vue'
 import Index from '@/views/index.vue'
 
 Vue.use(VueRouter)
@@ -21,7 +22,8 @@ const routes = [
   { path: '/forgotSent', component: ForgotSent },
   { path: '/tts', component: TextToSpeech, meta: { requiresAuth: true } },
   { path: '/result', component: DetectionResult, meta: { requiresAuth: true } },
-  { path: '/home', component: Home, meta: { requiresAuth: true } }
+  { path: '/home', component: Home, meta: { requiresAuth: true } },
+  { path: '/AiHistory', component: AiHistory, meta: { requiresAuth: true } }
 ]
 
 const router = new VueRouter({ mode: 'history', routes })

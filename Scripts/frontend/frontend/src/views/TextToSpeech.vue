@@ -158,12 +158,16 @@ $text: #e6e8eb;
 .looper {
   position: fixed;
   inset: 0 0 0 72px;
-  background: url(~@/assets/looper-bg.png) center / 1600px auto no-repeat;
-  background-size: 100%;
-  background-position: 0px -300px;
+  background: url(~@/assets/looper-bg.png) no-repeat center center;
+  background-size: cover;
   opacity: 0.5;
-  transform: rotate(15deg);
   pointer-events: none;
+
+  /* 🧭 Rotation & Centering Fix */
+  transform:scale(1.3);
+  transform-origin: center center;
+
+
 }
 
 .panel {
