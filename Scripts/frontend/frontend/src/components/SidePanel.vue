@@ -6,7 +6,7 @@
       @mouseleave="expanded = false"
   >
     <div class="brand">
-      <img class="logo" :src="logo" alt="logo"/>
+      <img class="logo" :src="logo" alt="logo" @click="$router.push('/home')"/>
       <span class="brand-text">Echo-trace</span>
     </div>
 
