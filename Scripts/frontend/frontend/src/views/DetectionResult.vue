@@ -151,7 +151,7 @@ export default {
         const base64Audio = await this.fileToBase64(this.file);
         const token = localStorage.getItem("token");
 
-        // ✅ use shared api.js instance (auto baseURL)
+
         const res = await api.post(
           "/detect",
           { audio: base64Audio },
@@ -222,7 +222,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/* unchanged styles */
 $bg: #0a0a0a;
 $border: rgba(255, 255, 255, 0.08);
 $text: #e6e8eb;

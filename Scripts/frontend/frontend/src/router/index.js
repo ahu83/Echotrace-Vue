@@ -11,6 +11,7 @@ import TextToSpeech from '@/views/TextToSpeech.vue'
 import DetectionResult from '@/views/DetectionResult.vue'
 import AiHistory from '@/views/AiHistory.vue'
 import Index from '@/views/index.vue'
+import ContactUs from '@/views/ContactUs.vue'
 
 Vue.use(VueRouter)
 
@@ -23,6 +24,7 @@ const routes = [
   { path: '/tts', component: TextToSpeech, meta: { requiresAuth: true } },
   { path: '/result', component: DetectionResult, meta: { requiresAuth: true } },
   { path: '/home', component: Home, meta: { requiresAuth: true } },
+  { path: '/contactus', component: ContactUs, meta: { requiresAuth: true } },
   { path: '/AiHistory', component: AiHistory, meta: { requiresAuth: true } }
 ]
 

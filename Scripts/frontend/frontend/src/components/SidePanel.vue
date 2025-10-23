@@ -5,13 +5,11 @@
     @mouseenter="expanded = true"
     @mouseleave="expanded = false"
   >
-    <!-- Brand -->
     <div class="brand" @click="$router.push('/home')">
       <img class="logo" :src="logo" alt="logo" />
       <span class="brand-text">Echo-trace</span>
     </div>
 
-    <!-- Navigation -->
     <nav class="nav">
       <button class="item" @click="$router.push('/result')">
         <span class="icon">
@@ -43,11 +41,22 @@
             />
           </svg>
         </span>
-        <span class="label">AI History</span>
+        <span class="label">History</span>
+      </button>
+
+      <button class="item" @click="$router.push('/ContactUs')">
+        <span class="icon">
+          <svg viewBox="0 0 24 24">
+            <path
+              fill="#fff"
+              d="M21 8V7l-3 2-2-1-6 5-4-2-3 2v1l3-2 4 2 6-5 2 1 3-2z"
+            />
+          </svg>
+        </span>
+        <span class="label">Support</span>
       </button>
     </nav>
 
-    <!-- Sign Out -->
     <div class="signout">
       <button class="item logout" @click="$emit('signout')">
         <span class="icon">
@@ -97,7 +106,6 @@ $text: #ffffff;
     width: 250px;
   }
 
-  /* ---------- Brand ---------- */
   .brand {
     height: 60px;
     display: flex;
@@ -127,7 +135,6 @@ $text: #ffffff;
     opacity: 1;
   }
 
-  /* ---------- Navigation ---------- */
   .nav {
     flex: 1;
     padding: 24px 10px;
@@ -159,7 +166,7 @@ $text: #ffffff;
       justify-content: center;
       align-items: center;
       margin-right: 16px;
-      flex-shrink: 0; /* keeps icons still */
+      flex-shrink: 0;
     }
 
     .icon svg {
@@ -169,7 +176,7 @@ $text: #ffffff;
 
     .label {
       flex: 1;
-      text-align: left; /* left-align text */
+      text-align: left;
       font-family: "Cabin", sans-serif;
       font-size: 15.5px;
       font-weight: 500;
@@ -183,7 +190,6 @@ $text: #ffffff;
     opacity: 1;
   }
 
-  /* ---------- Signout ---------- */
   .signout {
     margin-top: auto;
     padding: 14px 10px 18px;

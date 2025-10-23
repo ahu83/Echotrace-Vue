@@ -162,8 +162,6 @@ $text: #e6e8eb;
   background-size: cover;
   opacity: 0.5;
   pointer-events: none;
-
-  /* 🧭 Rotation & Centering Fix */
   transform:scale(1.3);
   transform-origin: center center;
 
