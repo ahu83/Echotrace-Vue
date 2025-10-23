@@ -1,15 +1,10 @@
 import numpy as np
 import soundfile
 import torch
-
 import os
 import io
-import io
-
-
 import torch
 import torchaudio
-
 from audioseal import AudioSeal
 
 
@@ -22,7 +17,6 @@ def watermark_audio(model, audio, sr, payload=None ):
     watermark = model(audios, sample_rate=sr, message=payload, alpha=1)
     watermarked_audio = audios + watermark
 
-    # Alternatively, you can also call forward() function directly with different tune-down / tune-up rate
     watermarked_audio = model(audios, sample_rate=sr, alpha=1)
 
     return watermarked_audio

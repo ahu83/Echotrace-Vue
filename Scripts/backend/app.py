@@ -14,7 +14,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
-import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from dotenv import load_dotenv
 import os
@@ -83,6 +83,14 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
+class Generation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(255))
+    watermarked_b64 = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('generations', lazy=True))
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -92,7 +100,6 @@ def register():
     if User.query.filter_by(email=email).first():
         return jsonify({'message': 'Email already exists'}), 400
 
-    # Force PBKDF2 (standard, stable)
     hashed_pw = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
 
     new_user = User(username=username, email=email, password=hashed_pw)
@@ -120,6 +127,7 @@ def profile(current_user):
     }), 200
 
 
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -131,7 +139,7 @@ def login():
 
     token = jwt.encode({
         'user_id': user.id,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+        'exp': datetime.utcnow() + timedelta(hours=2)
     }, app.config['SECRET_KEY'], algorithm='HS256')
 
     return jsonify({'token': token, 'username': user.username})
@@ -149,20 +157,16 @@ def generate_tts(current_user):
 
     print(f"Generating Bark audio for: {text}")
 
-    #Bark generation
+
     with torch.no_grad():
         bark_audio = generate_audio(text)
 
-    #Convert to float32 + normalize
     bark_audio = np.array(bark_audio, dtype=np.float32)
     bark_audio = bark_audio / np.max(np.abs(bark_audio) + 1e-9)
-
-    #max 10s  generated audio
     max_len = SAMPLE_RATE * 10
     if len(bark_audio) > max_len:
         bark_audio = bark_audio[:max_len]
 
-    #Watermark with audioSeal
     audio_tensor = torch.tensor(bark_audio, dtype=torch.float32)
     with torch.no_grad():
         watermarked = watermark_audio(model, audio_tensor, SAMPLE_RATE)
@@ -170,20 +174,49 @@ def generate_tts(current_user):
     watermarked_np = watermarked.squeeze().detach().cpu().numpy()
     watermarked_np = watermarked_np / np.max(np.abs(watermarked_np) + 1e-9)
 
-    #Encode WAVs to Base64
+
     def to_base64(np_audio):
         buf = io.BytesIO()
         sf.write(buf, np_audio, SAMPLE_RATE, format="WAV")
         buf.seek(0)
         return base64.b64encode(buf.read()).decode("utf-8")
 
+    watermarked_b64 = to_base64(watermarked_np)
+
+
+    new_gen = Generation(
+        user_id=current_user.id,
+        title=f"TTS - {text[:30]}",
+        watermarked_b64=watermarked_b64
+    )
+    db.session.add(new_gen)
+    db.session.commit()
+
     return jsonify({
         "unwatermarked": to_base64(bark_audio),
-        "watermarked": to_base64(watermarked_np)
-    })
+        "watermarked": watermarked_b64
+    }), 200
 
 
+@app.route("/history", methods=["GET", "OPTIONS"])
+@token_required
+def get_history(current_user):
+    if request.method == "OPTIONS":
+        return jsonify({"message": "CORS OK"}), 200
 
+    gens = Generation.query.filter_by(user_id=current_user.id)\
+        .order_by(Generation.created_at.desc()).all()
+
+    return jsonify([
+        {
+            "id": g.id,
+            "type": "tts",
+            "title": g.title,
+            "createdAt": g.created_at.isoformat(),
+            "url": f"data:audio/wav;base64,{g.watermarked_b64}"
+        }
+        for g in gens
+    ]), 200
 
 @app.route("/detect", methods=["POST", "OPTIONS"])
 @token_required
@@ -238,9 +271,7 @@ def detect_audio(current_user):
         return jsonify({"error": str(e)}), 500
 
 
-# -----------------------------------------------------------------------------
-# Run Flask
-# -----------------------------------------------------------------------------
+
 if __name__ == "__main__":
     print("Starting Flask backend...")
     app.run(host="0.0.0.0", port=5000)
