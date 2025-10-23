@@ -58,7 +58,7 @@
     </nav>
 
     <div class="signout">
-      <button class="item logout" @click="$emit('signout')">
+      <button class="item logout" @click="signOut">
         <span class="icon">
           <svg viewBox="0 0 24 24">
             <path
@@ -81,6 +81,13 @@ export default {
   },
   data() {
     return { expanded: false };
+  },
+  methods: {
+    signOut() {
+      localStorage.removeItem("token"); // remove stored JWT
+      localStorage.removeItem("username");
+      this.$router.push("/login"); // redirect to login page
+    },
   },
 };
 </script>
