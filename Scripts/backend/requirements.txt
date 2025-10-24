@@ -1,9 +1,8 @@
-# --- Core build tools ---
+
 setuptools>=75.0.0
 wheel>=0.44.0
 pip>=25.1.1
 
-# --- Flask + server stack ---
 Flask==3.0.3
 Flask-Cors==5.0.0
 Flask-SQLAlchemy==3.1.1
@@ -12,23 +11,18 @@ Werkzeug==3.0.6
 python-dotenv==1.0.1
 PyJWT==2.9.0
 
-# --- PyTorch stack (pinned for 3.12 compatibility) ---
-torch==2.9.0
-torchaudio==2.9.0
+torch==2.4.0
+torchaudio==2.4.0
 
-# --- Audio & watermarking ---
 audioseal==0.1.8
 bark==0.1.5
 pydub==0.25.1
 soundfile==0.13.1
 ffmpeg-python==0.2.0
 
-# --- Numerical libs ---
 numpy==1.26.4
 scipy==1.11.4
 
-# --- Networking + Hugging Face deps ---
-# Replace old requests & ensure urllib3 has six.moves
 requests>=2.31.0,<3
 urllib3<2
 six>=1.16.0
