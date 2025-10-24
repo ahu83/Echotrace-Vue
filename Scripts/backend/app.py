@@ -19,7 +19,7 @@ from functools import wraps
 from dotenv import load_dotenv
 import os
 
-# explicitly set paths for ffmpeg and ffprobe
+#explicitly set paths for ffmpeg and ffprobe
 AudioSegment.converter = r"C:\ffmpeg\bin\ffmpeg.exe"
 AudioSegment.ffprobe   = r"C:\ffmpeg\bin\ffprobe.exe"
 
@@ -30,7 +30,7 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 progress = {"value": 0, "running": False}
 
-# Load AudioSeal model ONCE
+#load audio seal generator and detector
 print("Loading AudioSeal model")
 model = AudioSeal.load_generator("audioseal_wm_16bits")
 print("AudioSeal model ready")
@@ -39,7 +39,7 @@ detector = AudioSeal.load_detector(("audioseal_detector_16bits"))
 print("AudioSeal detector ready")
 
 
-
+#setup the database url and secret key for password hashing
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 
@@ -48,9 +48,9 @@ db = SQLAlchemy(app)
 
 
 def token_required(f):
+    """Token checking for pages that require a token"""
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Allow CORS preflight requests
         if request.method == "OPTIONS":
             return jsonify({"message": "Preflight OK"}), 200
 
@@ -78,12 +78,14 @@ def token_required(f):
     return decorated
 
 class User(db.Model):
+    """create a database for the user class"""
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
 class Generation(db.Model):
+    """create a database for the saved audio"""
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     title = db.Column(db.String(255))
@@ -94,6 +96,7 @@ class Generation(db.Model):
 
 @app.route('/register', methods=['POST'])
 def register():
+    """Handle the sign up process"""
     data = request.get_json()
     username, email, password = data['username'], data['email'], data['password']
 
@@ -111,6 +114,7 @@ def register():
 @app.route('/verify-token', methods=['GET'])
 @token_required
 def verify_token(current_user):
+    """Check if the token is valid or not"""
     return jsonify({
         'valid': True,
         'username': current_user.username,
@@ -121,6 +125,7 @@ def verify_token(current_user):
 @app.route('/profile', methods=['GET'])
 @token_required
 def profile(current_user):
+    """Return the details of the current user"""
     return jsonify({
         'username': current_user.username,
         'email': current_user.email
@@ -130,6 +135,7 @@ def profile(current_user):
 
 @app.route('/login', methods=['POST'])
 def login():
+    """Handle the login to the website"""
     data = request.get_json()
     email, password = data['email'], data['password']
     user = User.query.filter_by(email=email).first()
@@ -147,6 +153,7 @@ def login():
 @app.route("/generate", methods=["POST", "OPTIONS"])
 @token_required
 def generate_tts(current_user):
+    """Take a text input from the user and generate a text to speech for that. output the audio after watermarking"""
     if request.method == "OPTIONS":
         return jsonify({"message": "CORS OK"}), 200
 
@@ -201,6 +208,7 @@ def generate_tts(current_user):
 @app.route("/history", methods=["GET", "OPTIONS"])
 @token_required
 def get_history(current_user):
+    """get the audio generation history for a user from the database and send it to vue"""
     if request.method == "OPTIONS":
         return jsonify({"message": "CORS OK"}), 200
 
@@ -221,6 +229,7 @@ def get_history(current_user):
 @app.route("/detect", methods=["POST", "OPTIONS"])
 @token_required
 def detect_audio(current_user):
+    """accepts an audio clip from vue checks it for a watermark. returns the confidence percentage to vue"""
     try:
         if request.method == "OPTIONS":
             return jsonify({"message": "CORS OK"}), 200
@@ -273,5 +282,4 @@ def detect_audio(current_user):
 
 
 if __name__ == "__main__":
-    print("Starting Flask backend...")
     app.run(host="0.0.0.0", port=5000)
