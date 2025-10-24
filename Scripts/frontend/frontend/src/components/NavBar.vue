@@ -2,7 +2,7 @@
   <el-header class="nav">
     <div class="nav-left">
       <img class="logo" :src="logo" alt="logo"/>
-      <span class="brand" style="margin-left: 10px">Echo Trace</span>
+      <span class="brand" style="margin-left: 10px">Echo-Trace</span>
     </div>
 
   </el-header>
@@ -40,6 +40,7 @@ export default {
 
 .brand {
   color: #fff;
+  font-family: "Cabin", sans-serif;
   font-weight: 700;
   letter-spacing: .2px;
   font-size: 42px;

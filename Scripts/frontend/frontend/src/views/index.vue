@@ -57,12 +57,15 @@ $text: #E6E8EB;
 
 .looper {
   position: absolute;
-  background: url(~@/assets/looper-bg.png) center / cover no-repeat;
-  opacity: .5;
-  transform: rotate(15deg);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url("@/assets/looper-bg.png") center center / cover no-repeat;
+  opacity: 0.4;
+  z-index: 0;
 }
-.looper-top { width: 2284.64px; height: 1326.07px; left: -361px; top: -591px; }
-.looper-bottom { width: 2259.73px; height: 1396.15px; left: -361px; top: 691px; }
+
 
 .glow {
   position: absolute; filter: blur(100px); opacity: .2; border-radius: 50%;
@@ -81,7 +84,7 @@ $text: #E6E8EB;
 
 .hero-title {
   margin: 0;
-  font-family: 'Abyssinica SIL','Cabin','Times New Roman',serif;
+  font-family: "Cabin", sans-serif;
   font-weight: 400;
   font-size: 64px;
   line-height: 85px;
@@ -95,7 +98,7 @@ $text: #E6E8EB;
 .hero-desc {
   max-width: 836px;
   margin: 18px auto 40px;
-  font-family: 'Actor','Segoe UI',Arial,sans-serif;
+  font-family: "Cabin", sans-serif;
   font-size: 20px;
   line-height: 33px;
   letter-spacing: .72px;

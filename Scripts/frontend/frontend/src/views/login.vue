@@ -125,6 +125,8 @@ export default {
 .title {
   margin-bottom: 25px;
   font-size: 1.6em;
+  font-family: "Cabin", sans-serif;
+
   font-weight: 600;
   color: #fafafa;
 }
@@ -137,6 +139,7 @@ form {
 
 label {
   display: block;
+  font-family: "Cabin", sans-serif;
   font-size: 0.9em;
   margin: 10px 0 5px;
   color: #d1d1d6;
@@ -150,6 +153,7 @@ input {
   background: #111;
   color: #fff;
   font-size: 0.95em;
+  font-family: "Cabin", sans-serif;
   outline: none;
   margin-bottom: 12px;
   transition: 0.2s ease;
@@ -181,6 +185,7 @@ input:focus {
   background: #0066ff;
   border: none;
   border-radius: 6px;
+  font-family: "Cabin", sans-serif;
   color: #fff;
   cursor: pointer;
   font-size: 1em;

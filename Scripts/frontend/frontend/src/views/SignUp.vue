@@ -1,9 +1,7 @@
 <template>
   <div class="signup-page">
-    <!-- Static looper background -->
     <div class="looper"></div>
 
-    <!-- Sign-up form -->
     <div class="signup-card">
       <h2>Create an account</h2>
 
@@ -87,7 +85,7 @@ export default {
   overflow: hidden;
 }
 
-/* 🟣 Static looper image background */
+
 .looper {
   position: absolute;
   top: 0;
@@ -114,6 +112,7 @@ export default {
 .signup-card h2 {
   margin-bottom: 20px;
   font-weight: 600;
+  font-family: "Cabin", sans-serif;
 }
 
 .social-row {
@@ -121,29 +120,6 @@ export default {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 15px;
-}
-
-.social-btn {
-  flex: 1;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  color: #ccc;
-  padding: 8px 0;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.social-btn:hover {
-  background: #222;
-}
-
-.social-btn.google {
-  color: #db4437;
-}
-
-.social-btn.facebook {
-  color: #1877f2;
 }
 
 .divider {
@@ -168,12 +144,14 @@ export default {
 
 form {
   text-align: left;
+  font-family: "Cabin", sans-serif;
 }
 
 label {
   display: block;
   font-size: 0.9em;
   margin: 8px 0 2px;
+  font-family: "Cabin", sans-serif;
 }
 
 input {
@@ -184,6 +162,7 @@ input {
   background: #111;
   color: #fff;
   margin-bottom: 10px;
+  font-family: "Cabin", sans-serif;
 }
 
 .primary-btn {

@@ -2,19 +2,22 @@
   <div class="page home">
     <nav-bar style="height: 100px"/>
 
+
     <div class="looper"/>
 
     <section class="section hero">
       <h1 class="title">
-        Explore our range watermarking solutions
+        Explore our range of watermarking solutions
       </h1>
     </section>
 
     <section class="section card-section" style="width: 100%; display: flex; justify-content: center;">
       <el-row :gutter="32" style="max-width: 1200px; justify-content: center; width: 100%;">
-        <el-col :xs="24" :sm="12" :md="8">
+        <el-col :xs="24" :sm="12" :md="6" :lg="6">
           <div class="card">
-            <img class="thumb" :src="imgs.tts" alt="">
+            <div class="thumb-container">
+              <img class="thumb" :src="imgs.tts" alt="Text-To-Speech">
+            </div>
             <div class="cta">
               <button class="pill" @click="$router.push('/tts')">
                 Text-To-Speech <i class="el-icon-arrow-right"/>
@@ -23,12 +26,40 @@
           </div>
         </el-col>
 
-        <el-col :xs="24" :sm="12" :md="8">
+        <el-col :xs="24" :sm="12" :md="6" :lg="6">
           <div class="card">
-            <img class="thumb" :src="imgs.detect2" alt="">
+            <div class="thumb-container">
+              <img class="thumb" :src="imgs.det" alt="Deepfake Detection">
+            </div>
             <div class="cta">
               <button class="pill" @click="$router.push('/result')">
                 Deepfake Detection <i class="el-icon-arrow-right"/>
+              </button>
+            </div>
+          </div>
+        </el-col>
+
+        <el-col :xs="24" :sm="12" :md="6" :lg="6">
+          <div class="card">
+            <div class="thumb-container">
+              <img class="thumb" :src="imgs.history" alt="History">
+            </div>
+            <div class="cta">
+              <button class="pill" @click="$router.push('/AiHistory')">
+                History <i class="el-icon-arrow-right"/>
+              </button>
+            </div>
+          </div>
+        </el-col>
+
+        <el-col :xs="24" :sm="12" :md="6" :lg="6">
+          <div class="card">
+            <div class="thumb-container">
+              <img class="thumb" :src="imgs.support" alt="Support">
+            </div>
+            <div class="cta">
+              <button class="pill" @click="$router.push('/contactus')">
+                Support <i class="el-icon-arrow-right"/>
               </button>
             </div>
           </div>
@@ -40,15 +71,18 @@
 
 <script>
 import NavBar from '@/components/NavBar.vue';
+import SidePanel from "@/components/SidePanel.vue";
 
 export default {
   name: 'Home',
-  components: { NavBar },
+  components: { SidePanel, NavBar },
   data() {
     return {
       imgs: {
         tts: require('@/assets/tts.png'),
-        detect2: require('@/assets/detect2.png')
+        det: require('@/assets/det.png'),
+        history: require('@/assets/history.png'),
+        support: require('@/assets/support.png')
       }
     };
   }
@@ -80,9 +114,9 @@ $border: rgba(255, 255, 255, .08);
 .title {
   max-width: 1303px;
   margin: 72px auto 8px;
-  font-family: 'Cabin', 'Segoe UI', Arial, sans-serif;
+  font-family: "Cabin", sans-serif;
   font-weight: 400;
-  font-size: 56px;
+  font-size: 50px;
   line-height: 78px;
   letter-spacing: .02em;
   background: linear-gradient(91.06deg, #FF1CF7 2.26%, #00F0FF 100%);
@@ -98,9 +132,9 @@ $border: rgba(255, 255, 255, .08);
 }
 
 .el-row {
-  display: flex !important;
-  justify-content: center !important;
+  display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   width: 100%;
 }
 
@@ -116,17 +150,25 @@ $border: rgba(255, 255, 255, .08);
   border-radius: 14px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
   padding-bottom: 24px;
-  height: 300px;
+  height: 250px;  /* Reduced the height */
   width: 100%;
-  max-width: 360px;
+  max-width: 400px;  /* Increased the width */
   margin: 0 16px;
 }
 
+.thumb-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 180px;  /* Reduced container height */
+  overflow: hidden;
+}
+
 .thumb {
-  width: 260px;
-  height: auto;
-  margin: 30px auto;
-  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .cta {
@@ -143,7 +185,7 @@ $border: rgba(255, 255, 255, .08);
   background: #000;
   color: #fff;
   border: 2px solid #EA2DF8;
-  font-family: 'Poppins', system-ui, Arial, sans-serif;
+  font-family: "Cabin", sans-serif;
   font-weight: 600;
   font-size: 16px;
   line-height: 16px;
@@ -151,37 +193,6 @@ $border: rgba(255, 255, 255, .08);
   align-items: center;
   gap: 8px;
   transition: transform .15s ease, box-shadow .15s ease;
-
-  &:after {
-    content: '';
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
-    background: linear-gradient(270deg, #FF1CF7 0%, #EA2DF8 8.17%, #DE38F8 12.98%, #CF44F9 18.75%, #BC54F9 26.44%, #AD60FA 32.21%, #A467FA 35.58%, #8681FB 47.6%, #6D95FC 57.21%, #52ACFC 67.79%, #43B8FD 73.56%, #32C6FD 80.29%, #15DFFE 91.83%, #00F0FF 100%);
-  }
-
-  &:before {
-    content: '';
-    position: absolute;
-    right: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 50px;
-    height: 80px;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 100% 100%;
-    background-image: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
-<path fill='%23FFFFFF' d='M6 11h8V9l5 3-5 3v-2H6z'/>\
-</svg>");
-    pointer-events: none;
-    z-index: 2;
-  }
 
   &:hover {
     transform: translateY(-1px);
