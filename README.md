@@ -12,7 +12,7 @@ Echotrace-Vue is an **audio watermarking** built with **Vue.js**. It allows the 
 
 ## Demo
 
-You can try out the live demo of the project [here](Echotrace.uk).
+You can try out the live demo of the project [here](#).
 
 ## Installation
 
